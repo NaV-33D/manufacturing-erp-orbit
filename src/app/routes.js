@@ -13,8 +13,13 @@ import WorkOrder from "./pages/WorkOrder";
 import QCLab from "./pages/QCLab";
 import Dispatch from "./pages/Dispatch";
 import Reports from "./pages/Reports";
+import Login from "./pages/Login";
 
 export const router = createBrowserRouter([
+  {
+    path: "/login",
+    Component: Login,
+  },
   {
     path: "/",
     Component: Layout,
