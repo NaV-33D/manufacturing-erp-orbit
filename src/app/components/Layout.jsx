@@ -17,6 +17,9 @@ import {
   FileText,
   Search,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -46,7 +49,7 @@ const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { hasModule, currentUser } = useAuth();
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
 
   const navigationItems = [
@@ -156,76 +159,124 @@ const AppSidebar = () => {
   };
 
   return (
-    <Sidebar collapsible="icon" className="bg-white border-r">
-      <SidebarHeader className="h-16 flex items-center justify-center px-4 border-b border-gray-100">
+    <Sidebar collapsible="icon" className="bg-white border-r relative z-20">
+      <SidebarHeader className="h-16 flex flex-col justify-center px-4 border-b border-gray-100">
         <div className="flex items-center gap-2 w-full pt-1">
+          {/* <div className="bg-blue-600 text-white rounded-lg w-8 h-8 flex items-center justify-center font-bold text-sm shrink-0">
+            EP
+          </div> */}
           <Factory className="w-6 h-6 text-[#F97316] shrink-0" />
           {!isCollapsed && (
-            <span className="font-semibold text-gray-900 truncate">
-              Manufacturing ERP
-            </span>
+            <div className="flex items-center justify-between w-full overflow-hidden">
+              <span className="font-semibold text-gray-900 truncate">
+                Manufacturing ERP
+              </span>
+              <button
+                onClick={toggleSidebar}
+                className="text-gray-900 hover:bg-gray-100 p-1 rounded-md shrink-0 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       </SidebarHeader>
 
       <SidebarContent className="py-2">
-        <SidebarMenu>
+        <SidebarMenu className="px-2">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
 
             return (
-              <SidebarMenuItem key={item.id}>
+              <SidebarMenuItem key={item.id} className="mb-1">
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
                   tooltip={item.label}
                   onClick={() => navigate(item.path)}
                   className={`
-                    flex items-center gap-3 px-3 py-2 cursor-pointer
-transition-all duration-200 ease-in-out text-md font-medium
-${
-  isActive
-    ? "bg-blue-700 text-white font-medium text-lg"
-    : "text-gray-700 hover:bg-gray-100"
-}
+                    w-full flex items-center gap-3 px-3 py-2 cursor-pointer
+                    transition-all duration-200 ease-in-out text-sm relative rounded-md
+                    ${
+                      isActive
+                        ? "bg-blue-50 text-blue-600 font-medium hover:bg-blue-50 hover:text-blue-600"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }
                   `}
                 >
-                  <div>
+                  <div className="flex items-center gap-3 w-full">
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md" />
+                    )}
                     <Icon
-                      size={56}
-                      className={` transition-colors duration-200 ${
+                      className={`w-5 h-5 shrink-0 transition-colors duration-200 ${
                         isActive ? "text-blue-600" : "text-gray-500"
                       }`}
                     />
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </div>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
           })}
         </SidebarMenu>
+
+        {/* <div className="px-4 mt-6 mb-2">
+          {!isCollapsed && (
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Quick Actions
+            </h3>
+          )}
+        </div>
+        
+        <SidebarMenu className="px-2">
+          <SidebarMenuItem className="mb-1">
+            <SidebarMenuButton
+              asChild
+              tooltip="Help & Support"
+              className="w-full flex items-center gap-3 px-3 py-2 cursor-pointer transition-all duration-200 ease-in-out text-sm relative rounded-md text-gray-700 hover:bg-gray-100"
+            >
+              <div className="flex items-center gap-3 w-full">
+                <HelpCircle className="w-5 h-5 shrink-0 text-gray-500" />
+                <span className="truncate">Help & Support</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip="Documentation"
+              className="w-full flex items-center gap-3 px-3 py-2 cursor-pointer transition-all duration-200 ease-in-out text-sm relative rounded-md text-gray-700 hover:bg-gray-100"
+            >
+              <div className="flex items-center gap-3 w-full">
+                <FileText className="w-5 h-5 shrink-0 text-gray-500" />
+                <span className="truncate">Documentation</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu> */}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-100 p-2">
+      <SidebarFooter className="border-t border-gray-100 p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="w-full flex items-center gap-2 hover:bg-gray-100 rounded-lg p-2 h-auto"
+                  className="w-full flex items-center gap-3 hover:bg-gray-100 rounded-lg p-2 h-auto"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="bg-blue-600 text-white rounded-lg text-xs">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="bg-blue-500 text-white rounded-full text-sm font-medium">
                       {getInitials(currentUser.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start text-left flex-1 truncate">
-                    <span className="text-sm font-medium text-gray-900 truncate">
+                  <div className="flex flex-col items-start text-left flex-1 min-w-0">
+                    <span className="text-sm font-semibold text-gray-900 truncate w-full">
                       {currentUser.name}
                     </span>
-                    <span className="text-xs text-gray-500 truncate">
+                    <span className="text-xs text-gray-500 truncate w-full">
                       {currentUser.role}
                     </span>
                   </div>
@@ -250,6 +301,15 @@ ${
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      {isCollapsed && (
+        <button
+          onClick={toggleSidebar}
+          className="absolute -right-3 top-6 bg-white border border-gray-200 rounded-full p-1 shadow-sm text-gray-500 hover:text-gray-900 z-50 flex items-center justify-center cursor-pointer"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
     </Sidebar>
   );
 };
