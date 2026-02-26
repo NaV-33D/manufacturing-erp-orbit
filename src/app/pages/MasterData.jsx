@@ -29,11 +29,13 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Plus, Edit, Archive, Shield, Search } from 'lucide-react';
+import { Plus, Edit, Archive, Shield, Search, Building, MapPin, Trash2 } from 'lucide-react';
+
 
 const MasterData = () => {
   const { hasPermission, hasModule } = useAuth();
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showWarehouseModal, setShowWarehouseModal] = useState(false);
   const [activeTab, setActiveTab] = useState('items');
 
   const items = [
@@ -67,6 +69,11 @@ const MasterData = () => {
     { id: 5, code: 'WC-005', name: 'Filling Line 2', capacity: '200 Units/hr', status: 'Maintenance' },
   ];
 
+  const warehouses = [
+    { id: 1, code: 'WH001', name: 'Main Mumbai Warehouse', location: 'Colaba Bazar S.O, MAHARASHTRA', type: 'GENERAL', capacity: '30,000 sq. ft.', status: 'Active' }
+  ];
+
+
   if (!hasModule('masterData')) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -86,7 +93,7 @@ const MasterData = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Master Data</h1>
-          <p className="text-gray-500 mt-1">Manage items, categories, UOMs and work centers</p>
+          <p className="text-gray-500 mt-1">Manage items, categories, UOMs, work centers and warehouses</p>
         </div>
       </div>
 
@@ -96,6 +103,7 @@ const MasterData = () => {
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="uom">UOM</TabsTrigger>
           <TabsTrigger value="workcenters">Work Centers</TabsTrigger>
+          <TabsTrigger value="warehouses">Warehouses</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items">
@@ -306,6 +314,96 @@ const MasterData = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="warehouses">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-gray-900">Warehouses</h2>
+              <p className="text-gray-500 mt-1">Manage your warehouse locations and details</p>
+            </div>
+            {hasPermission('masterData', 'create') && (
+              <Button onClick={() => setShowWarehouseModal(true)} className="bg-[#0B74FF]">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Warehouse
+              </Button>
+            )}
+          </div>
+          
+          <Card>
+            <CardHeader className="border-b py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-gray-900">All Warehouses ({warehouses.length})</CardTitle>
+                <div className="text-sm text-gray-500">Showing {warehouses.length} of {warehouses.length} warehouses</div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Warehouse Code</TableHead>
+                    <TableHead>Warehouse Name</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {warehouses.map((wh) => (
+                    <TableRow key={wh.id}>
+                      <TableCell className="font-semibold text-gray-900">{wh.code}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Building className="w-4 h-4 text-gray-400" />
+                          {wh.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          {wh.location}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-[#EEF2FF] text-[#4F46E5] hover:bg-[#EEF2FF] border-none">
+                          {wh.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-700">{wh.capacity}</TableCell>
+                      <TableCell>
+                        <Badge className="bg-[#10B981]/10 text-[#10B981] hover:bg-[#10B981]/20 border-none">
+                          {wh.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {hasPermission('masterData', 'update') && (
+                            <button className="text-[#0B74FF] hover:text-blue-700">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {hasPermission('masterData', 'delete') && (
+                            <button className="text-red-500 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="flex items-center justify-between px-6 py-4 border-t">
+                <span className="text-sm text-gray-500">Page 1 of 1</span>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled>Previous</Button>
+                  <Button variant="outline" size="sm" disabled>Next</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Create Item Modal */}
@@ -382,6 +480,68 @@ const MasterData = () => {
             <Button variant="outline" onClick={() => setShowItemModal(false)}>Cancel</Button>
             <Button className="bg-[#0B74FF]">Save Draft</Button>
             <Button className="bg-[#10B981]">Create & Activate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Warehouse Modal */}
+      <Dialog open={showWarehouseModal} onOpenChange={setShowWarehouseModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Warehouse</DialogTitle>
+            <DialogDescription>Add a new warehouse location to master data</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="whCode">Warehouse Code *</Label>
+                <Input id="whCode" placeholder="e.g., WH002" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whName">Warehouse Name *</Label>
+                <Input id="whName" placeholder="Enter warehouse name" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location *</Label>
+              <Input id="location" placeholder="Enter full address" />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="whType">Type *</Label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GENERAL">GENERAL</SelectItem>
+                    <SelectItem value="COLD_STORAGE">COLD STORAGE</SelectItem>
+                    <SelectItem value="BONDED">BONDED</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity *</Label>
+                <Input id="capacity" placeholder="e.g., 30,000 sq. ft." />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="whStatus">Status *</Label>
+                <Select defaultValue="Active">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowWarehouseModal(false)}>Cancel</Button>
+            <Button className="bg-[#0B74FF]">Save Warehouse</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
