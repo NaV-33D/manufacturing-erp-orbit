@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
-import UserManagement from "./pages/UserManagement";
+import UserManagement from "./pages/UserManagementMaster";
 import MasterData from "./pages/MasterData";
 import BomRouting from "./pages/BomRouting";
 import SalesOrder from "./pages/SalesOrder";

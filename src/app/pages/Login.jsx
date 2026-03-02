@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -8,13 +9,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 export default function Login() {
   const navigate = useNavigate();
+  const { loginWithApi } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simple conceptual login
-    navigate("/");
+
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      await loginWithApi({
+        email: email.trim(),
+        password,
+      });
+      navigate("/");
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to login with the provided credentials.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -34,6 +51,9 @@ export default function Login() {
           <CardDescription className="text-gray-500">
             Enter your credentials to access your account
           </CardDescription>
+          <p className="text-xs text-gray-500">
+            Sign in using your ERP credentials.
+          </p>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -65,10 +85,13 @@ export default function Login() {
                 className="bg-gray-50"
               />
             </div>
+            {errorMessage ? (
+              <p className="text-sm text-red-600">{errorMessage}</p>
+            ) : null}
           </CardContent>
           <CardFooter className="pt-2">
-            <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              Sign In
+            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           </CardFooter>
         </form>

@@ -23,6 +23,7 @@ import {
   HelpCircle,
   Menu,
   X,
+  Check,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -51,7 +52,7 @@ import {
 const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasModule, currentUser } = useAuth();
+  const { hasModule, currentUser, logout } = useAuth();
   const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } =
     useSidebar();
   const isCollapsed = state === "collapsed";
@@ -151,7 +152,7 @@ const AppSidebar = () => {
   ];
 
   const visibleNavItems = navigationItems.filter((item) =>
-    hasModule(item.module),
+    item.id === "users" ? true : hasModule(item.module),
   );
 
   const getInitials = (name) => {
@@ -308,9 +309,11 @@ const AppSidebar = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600 cursor-pointer"
-                    onClick={() => navigate("/login")}
+                    onClick={() => {
+                      logout();
+                      navigate('/login');
+                    }}
                   >
-                    avatar
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
@@ -334,9 +337,16 @@ const AppSidebar = () => {
 };
 
 const LayoutShell = () => {
-  const { currentUser, mockUsers, switchUser } = useAuth();
+  const { currentUser, mockUsers, switchUser, logout } = useAuth();
   const navigate = useNavigate();
   const { toggleSidebar, isMobile, openMobile } = useSidebar();
+  const coreDemoUsers = mockUsers.filter((user) => user.id <= 9);
+  const extraDemoUsers = mockUsers.filter((user) => user.id > 9);
+
+  const handleRoleSwitch = (userId) => {
+    switchUser(userId);
+    navigate("/");
+  };
 
   const getInitials = (name) => {
     return name
@@ -376,17 +386,20 @@ const LayoutShell = () => {
             {/* Role Switcher for Demo */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="hidden sm:flex">
-                  Switch Role (Demo)
+                <Button variant="outline" size="sm">
+                  Switch Role (Demo): {currentUser.role}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Switch User Role</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {mockUsers.map((user) => (
+                {coreDemoUsers.map((user) => (
                   <DropdownMenuItem
                     key={user.id}
-                    onClick={() => switchUser(user.id)}
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      handleRoleSwitch(user.id);
+                    }}
                     className={
                       currentUser.id === user.id
                         ? "bg-accent"
@@ -399,6 +412,35 @@ const LayoutShell = () => {
                         {user.role}
                       </span>
                     </div>
+                    {currentUser.id === user.id && (
+                      <Check className="w-4 h-4 ml-auto" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Extra Dummy Roles</DropdownMenuLabel>
+                {extraDemoUsers.map((user) => (
+                  <DropdownMenuItem
+                    key={user.id}
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      handleRoleSwitch(user.id);
+                    }}
+                    className={
+                      currentUser.id === user.id
+                        ? "bg-accent"
+                        : "cursor-pointer"
+                    }
+                  >
+                    <div className="flex flex-col">
+                      <span>{user.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {user.role}
+                      </span>
+                    </div>
+                    {currentUser.id === user.id && (
+                      <Check className="w-4 h-4 ml-auto" />
+                    )}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -432,7 +474,10 @@ const LayoutShell = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-red-600 cursor-pointer"
-                  onClick={() => navigate("/login")}
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
