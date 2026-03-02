@@ -50,6 +50,8 @@ import {
   getPermissions,
   getRoles,
   getUsers,
+  getRoleById,
+  removePermissionFromRole,
 } from "../apis/userManagement";
 
 const statusOptions = [
@@ -318,43 +320,64 @@ const UserManagementMaster = () => {
     }
   };
 
-  const toggleRoleAccess = (moduleId, permissionNameOrCode) => {
-    const key = String(permissionNameOrCode || "").toLowerCase();
+  const toggleRoleAccess = async (module, perm) => {
+    if (!selectedRole?.id) return;
+    const key = `${module.id}:${perm.id}`;
+    const prevChecked = Boolean(roleAccessMatrix[key]);
+    const nextChecked = !prevChecked;
+
+    // optimistic update
     setRoleAccessMatrix((prev) => ({
       ...prev,
-      [moduleId]: { ...prev[moduleId], [key]: !prev[moduleId]?.[key] },
+      [key]: nextChecked,
     }));
-  };
 
-  const openRoleAccess = (role) => {
-    setSelectedRole(role);
-    setRoleAccessMatrix({});
-    setShowRoleAccess(true);
-  };
-
-  const saveRoleAccess = async () => {
-    if (!selectedRole?.id) return;
-    setIsSaving(true);
-    setErrorMessage("");
     try {
-      for (const module of modules) {
-        for (const perm of permissions) {
-          const permKey = String(perm.code || perm.name || "").toLowerCase();
-          const isGranted = Boolean(roleAccessMatrix[module.id]?.[permKey]);
-          await assignPermissionToRole({
-            role_id: Number(selectedRole.id),
-            module_id: Number(module.id),
-            permission_id: Number(perm.id),
-            is_granted: isGranted,
-          });
-        }
+      if (nextChecked) {
+        await assignPermissionToRole({
+          role_id: Number(selectedRole.id),
+          module_id: Number(module.id),
+          permission_id: Number(perm.id),
+          is_granted: true,
+        });
+      } else {
+        await removePermissionFromRole({
+          role_id: Number(selectedRole.id),
+          module_id: Number(module.id),
+          permission_id: Number(perm.id),
+        });
       }
-      setSuccessMessage("Role access updated successfully.");
-      setShowRoleAccess(false);
     } catch (e) {
+      // revert on error
+      setRoleAccessMatrix((prev) => ({
+        ...prev,
+        [key]: prevChecked,
+      }));
       setErrorMessage(e.message || "Failed to update role access.");
-    } finally {
-      setIsSaving(false);
+    }
+  };
+
+  const openRoleAccess = async (role) => {
+    setSelectedRole(role);
+    setShowRoleAccess(true);
+    setErrorMessage("");
+    setRoleAccessMatrix({});
+    try {
+      const res = await getRoleById(role.id);
+      const payload = res?.data || res;
+      const perms =
+        payload?.permissions || payload?.data?.permissions || [];
+      const matrix = {};
+      perms.forEach((item) => {
+        if (!item?.is_granted) return;
+        const moduleId = item.module?.id || item.module_id;
+        const permissionId = item.permission?.id || item.permission_id;
+        if (!moduleId || !permissionId) return;
+        matrix[`${moduleId}:${permissionId}`] = true;
+      });
+      setRoleAccessMatrix(matrix);
+    } catch (e) {
+      setErrorMessage(e.message || "Failed to load role access.");
     }
   };
 
@@ -1743,8 +1766,8 @@ const UserManagementMaster = () => {
               Modules as rows; permissions as columns
             </DialogDescription>
           </DialogHeader>
-          <div className="py-2 max-h-[60vh] overflow-y-auto">
-            <div className="overflow-x-auto">
+          <div className="py-2 max-h-[70vh] overflow-y-auto w-full">
+            <div className="w-full">
               <table className="w-full border-collapse">
                 <thead className="sticky top-0 bg-white">
                   <tr className="border-b">
@@ -1763,15 +1786,13 @@ const UserManagementMaster = () => {
                         {m.name || m.module_name || m.code}
                       </td>
                       {permissions.map((p) => {
-                        const permKey = String(p.code || p.name || "").toLowerCase();
-                        const checked = Boolean(roleAccessMatrix[m.id]?.[permKey]);
+                        const key = `${m.id}:${p.id}`;
+                        const checked = Boolean(roleAccessMatrix[key]);
                         return (
                           <td key={p.id || p.code} className="text-center p-3">
                             <Checkbox
                               checked={checked}
-                              onCheckedChange={() =>
-                                toggleRoleAccess(m.id, p.code || p.name)
-                              }
+                              onCheckedChange={() => toggleRoleAccess(m, p)}
                             />
                           </td>
                         );
@@ -1784,10 +1805,7 @@ const UserManagementMaster = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRoleAccess(false)}>
-              Cancel
-            </Button>
-            <Button className="bg-[#0B74FF]" onClick={saveRoleAccess} disabled={isSaving}>
-              Save Access
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
