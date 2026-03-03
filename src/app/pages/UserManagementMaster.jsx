@@ -5,14 +5,6 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -28,10 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Checkbox } from "../components/ui/checkbox";
 import { Plus, Shield } from "lucide-react";
 import { toast } from "sonner";
+import UserManagementOverviewTab from "./user-management/tabs/UserManagementOverviewTab";
+import UsersTab from "./user-management/tabs/UsersTab";
+import ModulesTab from "./user-management/tabs/ModulesTab";
+import PermissionsTab from "./user-management/tabs/PermissionsTab";
+import RolesTab from "./user-management/tabs/RolesTab";
 import {
   assignPermissionToRole,
   bulkAssignRolesToUser,
@@ -64,7 +61,7 @@ const statusOptions = [
 
 const UserManagementMaster = () => {
   const { hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("management");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -670,6 +667,7 @@ const UserManagementMaster = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-center justify-between">
             <TabsList>
+              <TabsTrigger value="management">User Management</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="modules">Modules</TabsTrigger>
               <TabsTrigger value="permissions">Permissions</TabsTrigger>
@@ -702,447 +700,65 @@ const UserManagementMaster = () => {
             ) : null}
           </div>
 
-          <TabsContent value="users" className="mt-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Search username / email / phone"
-                value={filters.usersSearch}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, usersSearch: e.target.value }))
-                }
-                className="w-72"
-              />
-              <Select
-                value={filters.usersStatus}
-                onValueChange={(value) =>
-                  setFilters((p) => ({ ...p, usersStatus: value }))
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={applyUsers}>Apply</Button>
-              <Button variant="outline" onClick={resetUsers}>
-                Reset
-              </Button>
-            </div>
+          <UserManagementOverviewTab
+            users={users}
+            modules={modules}
+            permissions={permissions}
+            roles={roles}
+          />
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center text-gray-500 py-10"
-                        >
-                          Loading users...
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredUsers.length ? (
-                      filteredUsers.map((u) => (
-                        <TableRow key={u.id}>
-                          <TableCell className="font-medium">
-                            {u.username || "-"}
-                          </TableCell>
-                          <TableCell>{u.email}</TableCell>
-                          <TableCell>
-                            {[u.first_name, u.last_name].filter(Boolean).join(" ") ||
-                              "-"}
-                          </TableCell>
-                          <TableCell>{u.phone || "-"}</TableCell>
-                          <TableCell>{badgeForActive(u.is_active !== false)}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingUser(u);
-                                setEditUserForm({
-                                  username: u.username || "",
-                                  email: u.email || "",
-                                  first_name: u.first_name || "",
-                                  last_name: u.last_name || "",
-                                  phone: u.phone || "",
-                                  is_active: u.is_active !== false,
-                                });
-                                setShowEditUser(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openUserRoles(u)}
-                            >
-                              Roles
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => setConfirmDelete({ type: "user", row: u })}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-gray-500 py-10">
-                          No users found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+          <UsersTab
+            filters={filters}
+            setFilters={setFilters}
+            statusOptions={statusOptions}
+            applyUsers={applyUsers}
+            resetUsers={resetUsers}
+            isLoading={isLoading}
+            filteredUsers={filteredUsers}
+            badgeForActive={badgeForActive}
+            setEditingUser={setEditingUser}
+            setEditUserForm={setEditUserForm}
+            setShowEditUser={setShowEditUser}
+            openUserRoles={openUserRoles}
+            setConfirmDelete={setConfirmDelete}
+            usersPage={usersPage}
+            setUsersPage={setUsersPage}
+          />
 
-                <div className="flex items-center justify-between px-6 py-4 border-t">
-                  <span className="text-sm text-gray-500">Page {usersPage}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={usersPage <= 1}
-                      onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
-                    >
-                      Prev
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setUsersPage((p) => p + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <ModulesTab
+            filters={filters}
+            setFilters={setFilters}
+            statusOptions={statusOptions}
+            filteredModules={filteredModules}
+            badgeForActive={badgeForActive}
+            setEditingModule={setEditingModule}
+            setEditModuleForm={setEditModuleForm}
+            setShowEditModule={setShowEditModule}
+            setConfirmDelete={setConfirmDelete}
+          />
 
-          <TabsContent value="modules" className="mt-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Search name / code / description"
-                value={filters.modulesSearch}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, modulesSearch: e.target.value }))
-                }
-                className="w-72"
-              />
-              <Select
-                value={filters.modulesStatus}
-                onValueChange={(value) =>
-                  setFilters((p) => ({ ...p, modulesStatus: value }))
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={() => null}>Apply</Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  setFilters((p) => ({
-                    ...p,
-                    modulesSearch: "",
-                    modulesStatus: "all",
-                  }))
-                }
-              >
-                Reset
-              </Button>
-            </div>
+          <PermissionsTab
+            filters={filters}
+            setFilters={setFilters}
+            filteredPermissions={filteredPermissions}
+            setEditingPermission={setEditingPermission}
+            setEditPermissionForm={setEditPermissionForm}
+            setShowEditPermission={setShowEditPermission}
+            setConfirmDelete={setConfirmDelete}
+          />
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sl No.</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Order</TableHead>
-                      <TableHead>Icon</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredModules.length ? (
-                      filteredModules.map((m, idx) => (
-                        <TableRow key={m.id || `${m.code}-${idx}`}>
-                          <TableCell>{idx + 1}</TableCell>
-                          <TableCell>{m.name || m.module_name || "-"}</TableCell>
-                          <TableCell>{m.code || "-"}</TableCell>
-                          <TableCell>{m.description || "-"}</TableCell>
-                          <TableCell>{m.display_order ?? "-"}</TableCell>
-                          <TableCell>{m.icon || "-"}</TableCell>
-                          <TableCell>{badgeForActive(m.is_active !== false)}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingModule(m);
-                                setEditModuleForm({
-                                  name: m.name || m.module_name || "",
-                                  code: m.code || "",
-                                  description: m.description || "",
-                                  display_order:
-                                    m.display_order !== undefined && m.display_order !== null
-                                      ? String(m.display_order)
-                                      : "",
-                                  icon: m.icon || "",
-                                  is_active: m.is_active !== false,
-                                });
-                                setShowEditModule(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => setConfirmDelete({ type: "module", row: m })}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center text-gray-500 py-10">
-                          No modules found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="permissions" className="mt-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Search name / code / description"
-                value={filters.permissionsSearch}
-                onChange={(e) =>
-                  setFilters((p) => ({
-                    ...p,
-                    permissionsSearch: e.target.value,
-                  }))
-                }
-                className="w-72"
-              />
-              <Button onClick={() => null}>Apply</Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  setFilters((p) => ({ ...p, permissionsSearch: "" }))
-                }
-              >
-                Reset
-              </Button>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPermissions.length ? (
-                      filteredPermissions.map((p) => (
-                        <TableRow key={p.id || p.code}>
-                          <TableCell>{p.name || "-"}</TableCell>
-                          <TableCell>{p.code || "-"}</TableCell>
-                          <TableCell>{p.description || "-"}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingPermission(p);
-                                setEditPermissionForm({
-                                  name: p.name || "",
-                                  code: p.code || "",
-                                  description: p.description || "",
-                                });
-                                setShowEditPermission(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() =>
-                                setConfirmDelete({ type: "permission", row: p })
-                              }
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-gray-500 py-10">
-                          No permissions found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="roles" className="mt-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Search role name / code / description"
-                value={filters.rolesSearch}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, rolesSearch: e.target.value }))
-                }
-                className="w-72"
-              />
-              <Select
-                value={filters.rolesStatus}
-                onValueChange={(value) =>
-                  setFilters((p) => ({ ...p, rolesStatus: value }))
-                }
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={() => null}>Apply</Button>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  setFilters((p) => ({ ...p, rolesSearch: "", rolesStatus: "all" }))
-                }
-              >
-                Reset
-              </Button>
-            </div>
-
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Role Name</TableHead>
-                      <TableHead>Role Code</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRoles.length ? (
-                      filteredRoles.map((r) => (
-                        <TableRow key={r.id || r.role_code}>
-                          <TableCell className="font-medium">
-                            {r.role_name || r.name || "-"}
-                          </TableCell>
-                          <TableCell>{r.role_code || r.code || "-"}</TableCell>
-                          <TableCell>{r.description || "-"}</TableCell>
-                          <TableCell>{badgeForActive(r.is_active !== false)}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingRole(r);
-                                setEditRoleForm({
-                                  role_name: r.role_name || r.name || "",
-                                  role_code: r.role_code || r.code || "",
-                                  description: r.description || "",
-                                  is_active: r.is_active !== false,
-                                });
-                                setShowEditRole(true);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openRoleAccess(r)}
-                            >
-                              Manage Access
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => setConfirmDelete({ type: "role", row: r })}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-gray-500 py-10">
-                          No roles found.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <RolesTab
+            filters={filters}
+            setFilters={setFilters}
+            statusOptions={statusOptions}
+            filteredRoles={filteredRoles}
+            badgeForActive={badgeForActive}
+            setEditingRole={setEditingRole}
+            setEditRoleForm={setEditRoleForm}
+            setShowEditRole={setShowEditRole}
+            openRoleAccess={openRoleAccess}
+            setConfirmDelete={setConfirmDelete}
+          />
         </Tabs>
       </div>
 
