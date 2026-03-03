@@ -52,6 +52,7 @@ import {
   getRoles,
   getUsers,
   getRoleById,
+  getRolesForUser,
   removePermissionFromRole,
 } from "../apis/userManagement";
 
@@ -301,12 +302,36 @@ const UserManagementMaster = () => {
     loadData();
   };
 
-  const openUserRoles = (user) => {
+  const openUserRoles = async (user) => {
     setSelectedUser(user);
     const next = {};
     roles.forEach((role) => {
       next[role.id] = false;
     });
+
+    try {
+      const response = await getRolesForUser(user.id);
+      const payload = response?.data || response;
+      const assignedRows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.roles)
+          ? payload.roles
+          : [];
+
+      assignedRows.forEach((item) => {
+        const roleId =
+          item?.role_id ||
+          item?.roleId ||
+          item?.id ||
+          item?.role?.id;
+        if (roleId !== undefined && roleId !== null) {
+          next[Number(roleId)] = true;
+        }
+      });
+    } catch (e) {
+      setErrorMessage(e.message || "Failed to load assigned roles for this user.");
+    }
+
     setUserRoleSelection(next);
     setShowUserRoles(true);
   };
