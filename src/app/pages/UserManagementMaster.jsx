@@ -31,6 +31,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Checkbox } from "../components/ui/checkbox";
 import { Plus, Shield } from "lucide-react";
+import { toast } from "sonner";
 import {
   assignPermissionToRole,
   bulkAssignRolesToUser,
@@ -68,6 +69,18 @@ const UserManagementMaster = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    if (!errorMessage) return;
+    toast.error(errorMessage);
+    setErrorMessage("");
+  }, [errorMessage]);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    toast.success(successMessage);
+    setSuccessMessage("");
+  }, [successMessage]);
 
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -663,13 +676,6 @@ const UserManagementMaster = () => {
               </Button>
             ) : null}
           </div>
-
-          {errorMessage ? (
-            <p className="mt-4 text-sm text-red-600">{errorMessage}</p>
-          ) : null}
-          {successMessage ? (
-            <p className="mt-4 text-sm text-emerald-700">{successMessage}</p>
-          ) : null}
 
           <TabsContent value="users" className="mt-4 space-y-4">
             <div className="flex items-center gap-3">
@@ -1815,4 +1821,3 @@ const UserManagementMaster = () => {
 };
 
 export default UserManagementMaster;
-

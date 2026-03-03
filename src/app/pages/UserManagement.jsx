@@ -130,6 +130,7 @@ const UserManagement = () => {
       setModules(moduleRows);
       setPermissionDefinitions(permissionRows);
     } catch (error) {
+      console.log("Error loading user management data:", error);
       setErrorMessage(error.message || "Failed to load user management data.");
     } finally {
       setIsLoading(false);
