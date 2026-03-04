@@ -216,20 +216,18 @@ const AppSidebar = () => {
                     className={`
                     w-full flex items-center gap-3 px-3 py-2 cursor-pointer
                     transition-all duration-200 ease-in-out text-sm relative rounded-md
-                    ${
-                      isActive
-                        ? "bg-blue-50 text-blue-600 font-medium hover:bg-blue-50 hover:text-blue-600"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }
+                    text-gray-700 hover:bg-gray-100
+                    data-[active=true]:!bg-[#0B74FF]
+                    data-[active=true]:!text-white
+                    data-[active=true]:font-medium
+                    data-[active=true]:hover:!bg-[#0A68E3]
+                    data-[active=true]:hover:!text-white
                   `}
                   >
                     <div className="flex items-center gap-3 w-full">
-                      {isActive && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md" />
-                      )}
                       <Icon
                         className={`w-5 h-5 shrink-0 transition-colors duration-200 ${
-                          isActive ? "text-blue-600" : "text-gray-500"
+                          isActive ? "text-white" : "text-[#0B74FF]"
                         }`}
                       />
                       <span className="truncate">{item.label}</span>
