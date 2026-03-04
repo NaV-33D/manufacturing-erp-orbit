@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   Card,
@@ -5,13 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
 import {
   TrendingUp,
   TrendingDown,
@@ -21,6 +15,7 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
+  Grid3X3,
 } from "lucide-react";
 import {
   BarChart,
@@ -37,20 +32,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import DemoNotice from "../components/DemoNotice";
+import { getModules } from "../apis/userManagement";
 
 const Dashboard = () => {
-  const { currentUser, mockUsers, switchUser } = useAuth();
-  const coreDemoUsers = mockUsers.filter((user) => user.id <= 9);
-  const extraDemoUsers = mockUsers.filter((user) => user.id > 9);
-  const coreRoleValue = coreDemoUsers.some((user) => user.id === currentUser.id)
-    ? String(currentUser.id)
-    : undefined;
-  const extraRoleValue = extraDemoUsers.some(
-    (user) => user.id === currentUser.id,
-  )
-    ? String(currentUser.id)
-    : undefined;
+  const { currentUser } = useAuth();
+  const [apiModules, setApiModules] = useState([]);
+  const [modulesLoading, setModulesLoading] = useState(false);
 
   // Mock data for charts
   const productionData = [
@@ -79,21 +66,91 @@ const Dashboard = () => {
 
   const COLORS = ["#0B74FF", "#10B981", "#F59E0B", "#EF4444"];
 
-  // Render different dashboards based on role
-  const renderDashboard = () => {
-    switch (currentUser.role) {
-      case "Super Admin":
-        return renderSuperAdminDashboard();
-      case "Production Manager":
-        return renderProductionManagerDashboard();
-      case "Sales Executive":
-        return renderSalesDashboard();
-      case "QC Lead":
-        return renderQCDashboard();
-      default:
-        return renderDefaultDashboard();
-    }
+  useEffect(() => {
+    const loadModules = async () => {
+      setModulesLoading(true);
+      try {
+        const response = await getModules();
+        const payload = response?.data || response;
+        const rows = payload?.modules || payload || [];
+        setApiModules(Array.isArray(rows) ? rows : []);
+      } catch (_error) {
+        setApiModules([]);
+      } finally {
+        setModulesLoading(false);
+      }
+    };
+
+    loadModules();
+  }, []);
+
+  const demoModuleNameMap = {
+    dashboard: "Dashboard",
+    users: "User Management",
+    masterData: "Master Data",
+    bom: "BOM & Routing",
+    sales: "Sales Orders",
+    mrp: "MRP Planning",
+    purchase: "Purchase",
+    grn: "GRN",
+    inventory: "Inventory",
+    workOrder: "Work Orders",
+    qc: "QC Lab",
+    dispatch: "Dispatch",
+    reports: "Reports",
   };
+
+  const availableModules = useMemo(() => {
+    if (apiModules.length > 0) {
+      return apiModules
+        .filter((module) => module.is_active !== false)
+        .map((module) => ({
+          id: module.id || module.code,
+          name: module.name || module.module_name || module.code,
+          code: module.code || module.name,
+        }));
+    }
+
+    return Object.keys(currentUser.permissions || {})
+      .filter((key) => key !== "dashboard")
+      .map((key) => ({
+        id: key,
+        name: demoModuleNameMap[key] || key,
+        code: key,
+      }));
+  }, [apiModules, currentUser.permissions]);
+
+  const renderDashboard = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <StatCard
+          title="Accessible Modules"
+          value={String(availableModules.length)}
+          icon={Grid3X3}
+          color="#0B74FF"
+        />
+        <StatCard
+          title="Active Permissions"
+          value={String(Object.keys(currentUser.permissions || {}).length)}
+          icon={CheckCircle}
+          color="#10B981"
+        />
+        <StatCard
+          title="Role"
+          value={currentUser.role || "User"}
+          icon={Package}
+          color="#F59E0B"
+        />
+        <StatCard
+          title="Module Source"
+          value={apiModules.length > 0 ? "API" : "Fallback"}
+          icon={Clock}
+          color="#0B74FF"
+        />
+      </div>
+
+    </>
+  );
 
   const StatCard = ({ title, value, change, icon: Icon, trend, color }) => (
     <Card>
@@ -617,52 +674,6 @@ const Dashboard = () => {
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 mt-1">Welcome back, {currentUser.name}</p>
       </div>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Demo Role Switcher</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Core roles</p>
-              <Select
-                value={coreRoleValue}
-                onValueChange={(value) => switchUser(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select core role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {coreDemoUsers.map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {user.name} - {user.role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-2">Dummy roles</p>
-              <Select
-                value={extraRoleValue}
-                onValueChange={(value) => switchUser(Number(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select dummy role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {extraDemoUsers.map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {user.name} - {user.role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      <DemoNotice />
       {renderDashboard()}
     </div>
   );

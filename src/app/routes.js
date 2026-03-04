@@ -13,6 +13,7 @@ import WorkOrder from "./pages/WorkOrder";
 import QCLab from "./pages/QCLab";
 import Dispatch from "./pages/Dispatch";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 
 export const router = createBrowserRouter([
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: "qc", Component: QCLab },
       { path: "dispatch", Component: Dispatch },
       { path: "reports", Component: Reports },
+      { path: "settings", Component: Settings },
     ],
   },
 ]);

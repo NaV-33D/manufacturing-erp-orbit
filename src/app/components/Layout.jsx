@@ -20,12 +20,9 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  HelpCircle,
   Menu,
   X,
-  Check,
 } from "lucide-react";
-import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import {
@@ -48,6 +45,45 @@ import {
   SidebarHeader,
   useSidebar,
 } from "./ui/sidebar";
+import { getModules } from "../apis/userManagement";
+
+const normalizeModuleValue = (value = "") =>
+  String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+const moduleAliasMap = {
+  dashboard: "dashboard",
+  user_management: "users",
+  users: "users",
+  master_data: "masterData",
+  bom_routing: "bom",
+  bom: "bom",
+  sales_orders: "sales",
+  sales: "sales",
+  mrp: "mrp",
+  purchase: "purchase",
+  grn: "grn",
+  inventory: "inventory",
+  work_order: "workOrder",
+  work_orders: "workOrder",
+  qc: "qc",
+  qc_lab: "qc",
+  dispatch: "dispatch",
+  reports: "reports",
+};
+
+const resolveModuleKey = (module) => {
+  const candidates = [module?.code, module?.name, module?.module_name];
+  for (const candidate of candidates) {
+    const normalized = normalizeModuleValue(candidate);
+    if (normalized && moduleAliasMap[normalized]) {
+      return moduleAliasMap[normalized];
+    }
+  }
+  return null;
+};
 
 const AppSidebar = () => {
   const navigate = useNavigate();
@@ -56,6 +92,33 @@ const AppSidebar = () => {
   const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } =
     useSidebar();
   const isCollapsed = state === "collapsed";
+  const [allowedModules, setAllowedModules] = useState(null);
+
+  useEffect(() => {
+    const loadModules = async () => {
+      try {
+        const response = await getModules();
+        const payload = response?.data || response;
+        const rows = payload?.modules || payload || [];
+
+        if (!Array.isArray(rows)) {
+          setAllowedModules(new Set());
+          return;
+        }
+
+        const moduleKeys = rows
+          .filter((module) => module?.is_active !== false)
+          .map(resolveModuleKey)
+          .filter(Boolean);
+
+        setAllowedModules(new Set(moduleKeys));
+      } catch (_error) {
+        setAllowedModules(null);
+      }
+    };
+
+    loadModules();
+  }, []);
 
   const navigationItems = [
     {
@@ -149,11 +212,27 @@ const AppSidebar = () => {
       path: "/reports",
       module: "reports",
     },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: Settings,
+      path: "/settings",
+      module: "settings",
+      static: true,
+    },
   ];
 
-  const visibleNavItems = navigationItems.filter((item) =>
-    item.id === "users" ? true : hasModule(item.module),
-  );
+  const visibleNavItems = navigationItems.filter((item) => {
+    if (item.static) {
+      return true;
+    }
+
+    if (allowedModules instanceof Set) {
+      return allowedModules.has(item.module);
+    }
+
+    return hasModule(item.module);
+  });
 
   const getInitials = (name) => {
     return name
@@ -335,16 +414,9 @@ const AppSidebar = () => {
 };
 
 const LayoutShell = () => {
-  const { currentUser, mockUsers, switchUser, logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const { toggleSidebar, isMobile, openMobile } = useSidebar();
-  const coreDemoUsers = mockUsers.filter((user) => user.id <= 9);
-  const extraDemoUsers = mockUsers.filter((user) => user.id > 9);
-
-  const handleRoleSwitch = (userId) => {
-    switchUser(userId);
-    navigate("/");
-  };
 
   const getInitials = (name) => {
     return name
@@ -381,69 +453,6 @@ const LayoutShell = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Role Switcher for Demo */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  Switch Role (Demo): {currentUser.role}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Switch User Role</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {coreDemoUsers.map((user) => (
-                  <DropdownMenuItem
-                    key={user.id}
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      handleRoleSwitch(user.id);
-                    }}
-                    className={
-                      currentUser.id === user.id
-                        ? "bg-accent"
-                        : "cursor-pointer"
-                    }
-                  >
-                    <div className="flex flex-col">
-                      <span>{user.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.role}
-                      </span>
-                    </div>
-                    {currentUser.id === user.id && (
-                      <Check className="w-4 h-4 ml-auto" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Extra Dummy Roles</DropdownMenuLabel>
-                {extraDemoUsers.map((user) => (
-                  <DropdownMenuItem
-                    key={user.id}
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      handleRoleSwitch(user.id);
-                    }}
-                    className={
-                      currentUser.id === user.id
-                        ? "bg-accent"
-                        : "cursor-pointer"
-                    }
-                  >
-                    <div className="flex flex-col">
-                      <span>{user.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.role}
-                      </span>
-                    </div>
-                    {currentUser.id === user.id && (
-                      <Check className="w-4 h-4 ml-auto" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* User Profile on Top Nav - Keeping it as requested */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
