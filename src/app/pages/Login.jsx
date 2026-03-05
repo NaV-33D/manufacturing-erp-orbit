@@ -1,14 +1,22 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Factory } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { loginWithApi } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,9 +34,12 @@ export default function Login() {
         email: email.trim(),
         password,
       });
-      navigate("/");
+      const dest = location.state?.from || "/";
+      navigate(dest, { replace: true });
     } catch (error) {
-      setErrorMessage(error.message || "Unable to login with the provided credentials.");
+      setErrorMessage(
+        error.message || "Unable to login with the provided credentials.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -40,7 +51,9 @@ export default function Login() {
         <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100">
           <Factory className="w-8 h-8 text-[#F97316]" />
         </div>
-        <span className="text-2xl font-bold text-gray-900">Manufacturing ERP</span>
+        <span className="text-2xl font-bold text-gray-900">
+          Manufacturing ERP
+        </span>
       </div>
 
       <Card className="w-full max-w-md shadow-lg border-0">
@@ -72,7 +85,10 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                <a
+                  href="#"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                >
                   Forgot password?
                 </a>
               </div>
@@ -90,15 +106,20 @@ export default function Login() {
             ) : null}
           </CardContent>
           <CardFooter className="pt-2">
-            <Button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
               {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           </CardFooter>
         </form>
       </Card>
-      
+
       <p className="mt-8 text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} Manufacturing ERP. All rights reserved.
+        &copy; {new Date().getFullYear()} Manufacturing ERP. All rights
+        reserved.
       </p>
     </div>
   );

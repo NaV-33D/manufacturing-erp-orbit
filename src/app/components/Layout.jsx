@@ -88,7 +88,7 @@ const resolveModuleKey = (module) => {
 const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasModule, currentUser, logout } = useAuth();
+  const { perms, currentUser, logout } = useAuth();
   const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } =
     useSidebar();
   const isCollapsed = state === "collapsed";
@@ -227,17 +227,71 @@ const AppSidebar = () => {
       return true;
     }
 
-    if (allowedModules instanceof Set) {
-      return allowedModules.has(item.module);
+    // Check if user is SUPER_ADMIN
+    const isSuperAdmin = currentUser?.roles?.some((r) => {
+      if (!r) return false;
+      if (typeof r === "string") return r === "SUPER_ADMIN";
+      return (
+        r === "SUPER_ADMIN" ||
+        r?.code === "SUPER_ADMIN" ||
+        r?.role_code === "SUPER_ADMIN"
+      );
+    });
+
+    // SUPER_ADMIN can see all modules
+    if (isSuperAdmin) {
+      return true;
     }
 
-    return hasModule(item.module);
+    // For regular users, check if they have READ access to this module in perms
+    if (!perms) {
+      return false; // no permissions loaded yet
+    }
+
+    // Map module names to permission keys
+    const moduleCodeMap = {
+      users: "USER_MANAGEMENT",
+      dashboard: "DASHBOARD",
+      masterData: "MASTER_DATA",
+      bom: "BOM",
+      sales: "SALES",
+      mrp: "MRP",
+      purchase: "PURCHASE",
+      grn: "GRN",
+      inventory: "INVENTORY",
+      workOrder: "WORK_ORDER",
+      qc: "QC",
+      dispatch: "DISPATCH",
+      reports: "REPORTS",
+    };
+
+    const moduleCode = moduleCodeMap[item.module] || item.module.toUpperCase();
+    return !!perms?.[moduleCode]?.READ;
   });
 
   const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
+    if (!name) return "?";
+    let s = "";
+    if (typeof name === "string") {
+      s = name.trim();
+    } else if (typeof name === "object") {
+      s = (
+        name.firstName ||
+        name.first_name ||
+        name.fullName ||
+        name.full_name ||
+        name.name ||
+        ""
+      )
+        .toString()
+        .trim();
+    } else {
+      s = String(name).trim();
+    }
+    if (!s) return "?";
+    return s
+      .split(/\s+/)
+      .map((n) => (n && n[0] ? n[0] : ""))
       .join("")
       .toUpperCase();
   };
@@ -324,7 +378,7 @@ const AppSidebar = () => {
             </h3>
           )}
         </div>
-        
+
         <SidebarMenu className="px-2">
           <SidebarMenuItem className="mb-1">
             <SidebarMenuButton
@@ -388,7 +442,7 @@ const AppSidebar = () => {
                     className="text-red-600 cursor-pointer"
                     onClick={() => {
                       logout();
-                      navigate('/login');
+                      navigate("/login");
                     }}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -419,9 +473,28 @@ const LayoutShell = () => {
   const { toggleSidebar, isMobile, openMobile } = useSidebar();
 
   const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
+    if (!name) return "?";
+    let s = "";
+    if (typeof name === "string") {
+      s = name.trim();
+    } else if (typeof name === "object") {
+      s = (
+        name.firstName ||
+        name.first_name ||
+        name.fullName ||
+        name.full_name ||
+        name.name ||
+        ""
+      )
+        .toString()
+        .trim();
+    } else {
+      s = String(name).trim();
+    }
+    if (!s) return "?";
+    return s
+      .split(/\s+/)
+      .map((n) => (n && n[0] ? n[0] : ""))
       .join("")
       .toUpperCase();
   };
@@ -483,7 +556,7 @@ const LayoutShell = () => {
                   className="text-red-600 cursor-pointer"
                   onClick={() => {
                     logout();
-                    navigate('/login');
+                    navigate("/login");
                   }}
                 >
                   <LogOut className="w-4 h-4 mr-2" />

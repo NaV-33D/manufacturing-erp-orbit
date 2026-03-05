@@ -9,6 +9,8 @@ const metricCards = [
 ];
 
 const UserManagementOverviewTab = ({ users, modules, permissions, roles }) => {
+  // console.log(users, modules, permissions, roles);
+
   const metrics = {
     users: users.length,
     modules: modules.length,

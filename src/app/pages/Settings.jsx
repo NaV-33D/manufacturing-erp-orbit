@@ -1,11 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 
 const Settings = () => {
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-gray-500 mt-1">Configuration panel is coming soon.</p>
+        <p className="text-gray-500 mt-1">
+          Configuration panel is coming soon.
+        </p>
       </div>
 
       <Card>
