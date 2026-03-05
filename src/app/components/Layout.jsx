@@ -60,11 +60,15 @@ const moduleAliasMap = {
   master_data: "masterData",
   bom_routing: "bom",
   bom: "bom",
+  sales_order: "sales",
   sales_orders: "sales",
   sales: "sales",
   mrp: "mrp",
+  purchase_order: "purchase",
+  purchase_orders: "purchase",
   purchase: "purchase",
   grn: "grn",
+  warehouse: "inventory",
   inventory: "inventory",
   work_order: "workOrder",
   work_orders: "workOrder",
@@ -88,14 +92,15 @@ const resolveModuleKey = (module) => {
 const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasModule, currentUser, logout } = useAuth();
+  const { currentUser, authToken, logout } = useAuth();
   const { state, toggleSidebar, isMobile, openMobile, setOpenMobile } =
     useSidebar();
   const isCollapsed = state === "collapsed";
-  const [allowedModules, setAllowedModules] = useState(null);
+  const [allowedModules, setAllowedModules] = useState(new Set());
 
   useEffect(() => {
     const loadModules = async () => {
+      setAllowedModules(new Set());
       try {
         const response = await getModules();
         const payload = response?.data || response;
@@ -106,19 +111,16 @@ const AppSidebar = () => {
           return;
         }
 
-        const moduleKeys = rows
-          .filter((module) => module?.is_active !== false)
-          .map(resolveModuleKey)
-          .filter(Boolean);
+        const moduleKeys = rows.map(resolveModuleKey).filter(Boolean);
 
         setAllowedModules(new Set(moduleKeys));
       } catch (_error) {
-        setAllowedModules(null);
+        setAllowedModules(new Set());
       }
     };
 
     loadModules();
-  }, []);
+  }, [authToken, currentUser?.id]);
 
   const navigationItems = [
     {
@@ -227,11 +229,7 @@ const AppSidebar = () => {
       return true;
     }
 
-    if (allowedModules instanceof Set) {
-      return allowedModules.has(item.module);
-    }
-
-    return hasModule(item.module);
+    return allowedModules.has(item.module);
   });
 
   const getInitials = (name) => {
@@ -388,7 +386,7 @@ const AppSidebar = () => {
                     className="text-red-600 cursor-pointer"
                     onClick={() => {
                       logout();
-                      navigate('/login');
+                      navigate("/login");
                     }}
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -483,7 +481,7 @@ const LayoutShell = () => {
                   className="text-red-600 cursor-pointer"
                   onClick={() => {
                     logout();
-                    navigate('/login');
+                    navigate("/login");
                   }}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
